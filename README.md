@@ -15,7 +15,7 @@ kubectl binary on master node
 
 ## Caveats
 
-to fully remove master node content, you need to invoke uninstall script manualy:
+to fully remove master node content, you need to invoke uninstall script manually:
 https://rancher.com/docs/k3s/latest/en/installation/uninstall/
 
 ## Usage
