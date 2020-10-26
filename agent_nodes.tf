@@ -72,6 +72,7 @@ resource null_resource agents_install {
   triggers = {
     on_immutable_changes = local.agents_metadata[each.key].immutable_fields_hash
     on_new_version       = local.k3s_version
+    kubectl_command = var.kubectl_command
   }
 
   connection {
@@ -130,6 +131,7 @@ resource null_resource agents_drain {
     agent_name      = local.agents_metadata[split(var.separator, each.key)[0]].name
     connection_json = base64encode(jsonencode(local.root_server_connection))
     drain_timeout   = var.drain_timeout
+    kubectl_command = var.kubectl_command
   }
   // Because we use triggers as memory area, we need to ignore all changes on it.
   lifecycle { ignore_changes = [triggers] }
@@ -166,7 +168,7 @@ resource null_resource agents_drain {
 
   provisioner remote-exec {
     when   = destroy
-    inline = ["kubectl drain ${self.triggers.agent_name} --delete-local-data --force --ignore-daemonsets --timeout=${self.triggers.drain_timeout}"]
+    inline = ["${self.triggers.kubectl_command} drain ${self.triggers.agent_name} --delete-local-data --force --ignore-daemonsets --timeout=${self.triggers.drain_timeout}"]
   }
 }
 
@@ -179,6 +181,7 @@ resource null_resource agents_annotation {
     agent_name       = local.agents_metadata[split(var.separator, each.key)[0]].name
     annotation_name  = split(var.separator, each.key)[1]
     on_value_changes = each.value
+    kubectl_command = var.kubectl_command
 
     // Because some fields must be used on destruction, we need to store them into the current
     // object. The only way to do that is to use triggers to store theses fields.
@@ -219,14 +222,14 @@ resource null_resource agents_annotation {
 
   provisioner remote-exec {
     inline = [
-      "until kubectl get node ${self.triggers.agent_name}; do sleep 1; done",
-    "kubectl annotate --overwrite node ${self.triggers.agent_name} ${self.triggers.annotation_name}=${self.triggers.on_value_changes}"]
+      "until ${self.triggers.kubectl_command} get node ${self.triggers.agent_name}; do sleep 1; done",
+    "${self.triggers.kubectl_command} annotate --overwrite node ${self.triggers.agent_name} ${self.triggers.annotation_name}=${self.triggers.on_value_changes}"]
   }
 
   provisioner remote-exec {
     when = destroy
     inline = [
-    "kubectl annotate node ${self.triggers.agent_name} ${self.triggers.annotation_name}-"]
+    "${self.triggers.kubectl_command} annotate node ${self.triggers.agent_name} ${self.triggers.annotation_name}-"]
   }
 }
 
@@ -239,6 +242,7 @@ resource null_resource agents_label {
     agent_name       = local.agents_metadata[split(var.separator, each.key)[0]].name
     label_name       = split(var.separator, each.key)[1]
     on_value_changes = each.value
+    kubectl_command = var.kubectl_command
 
     // Because some fields must be used on destruction, we need to store them into the current
     // object. The only way to do that is to use triggers to store theses fields.
@@ -279,14 +283,14 @@ resource null_resource agents_label {
 
   provisioner remote-exec {
     inline = [
-      "until kubectl get node ${self.triggers.agent_name}; do sleep 1; done",
-    "kubectl label --overwrite node ${self.triggers.agent_name} ${self.triggers.label_name}=${self.triggers.on_value_changes}"]
+      "until ${self.triggers.kubectl_command} get node ${self.triggers.agent_name}; do sleep 1; done",
+    "${self.triggers.kubectl_command} label --overwrite node ${self.triggers.agent_name} ${self.triggers.label_name}=${self.triggers.on_value_changes}"]
   }
 
   provisioner remote-exec {
     when = destroy
     inline = [
-    "kubectl label node ${self.triggers.agent_name} ${self.triggers.label_name}-"]
+    "${self.triggers.kubectl_command} label node ${self.triggers.agent_name} ${self.triggers.label_name}-"]
   }
 }
 
@@ -299,6 +303,7 @@ resource null_resource agents_taint {
     agent_name       = local.agents_metadata[split(var.separator, each.key)[0]].name
     taint_name       = split(var.separator, each.key)[1]
     on_value_changes = each.value
+    kubectl_command = var.kubectl_command
 
     // Because some fields must be used on destruction, we need to store them into the current
     // object. The only way to do that is to use triggers to store theses fields.
@@ -339,12 +344,12 @@ resource null_resource agents_taint {
 
   provisioner remote-exec {
     inline = [
-      "until kubectl get node ${self.triggers.agent_name}; do sleep 1; done",
-    "kubectl taint node ${self.triggers.agent_name} ${self.triggers.taint_name}=${self.triggers.on_value_changes} --overwrite"]
+      "until ${self.triggers.kubectl_command} get node ${self.triggers.agent_name}; do sleep 1; done",
+    "${self.triggers.kubectl_command} taint node ${self.triggers.agent_name} ${self.triggers.taint_name}=${self.triggers.on_value_changes} --overwrite"]
   }
 
   provisioner remote-exec {
     when   = destroy
-    inline = ["kubectl taint node ${self.triggers.agent_name} ${self.triggers.taint_name}-"]
+    inline = ["${self.triggers.kubectl_command} taint node ${self.triggers.agent_name} ${self.triggers.taint_name}-"]
   }
 }

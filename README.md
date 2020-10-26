@@ -9,6 +9,11 @@
 Terraform module which creates a [k3s](https://k3s.io/) cluster, with multi-server 
 and annotations/labels/taints management features. 
 
+## Requirements
+
+kubectl binary on master node
+
+
 ## Usage
 
 ``` hcl-terraform

@@ -56,6 +56,12 @@ variable global_flags {
   default     = []
 }
 
+variable kubectl_command {
+  description = "Specify custom kubectl environment variable"
+  type        = string
+  default     = "kubectl"
+}
+
 variable servers {
   description = "K3s server nodes definition. The key is used as node name if no name is provided."
   type        = map(any)

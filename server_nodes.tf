@@ -160,6 +160,7 @@ resource null_resource servers_install {
   triggers = {
     on_immutable_changes = local.servers_metadata[each.key].immutable_fields_hash
     on_new_version       = local.k3s_version
+    kubectl_command = var.kubectl_command
   }
 
   connection {
@@ -202,7 +203,7 @@ resource null_resource servers_install {
   provisioner "remote-exec" {
     inline = [
       "INSTALL_K3S_VERSION=${local.k3s_version} sh /tmp/k3s-installer server ${local.servers_metadata[each.key].flags}",
-      "until kubectl get node ${local.servers_metadata[each.key].name}; do sleep 1; done"
+      "until ${var.kubectl_command} get node ${local.servers_metadata[each.key].name}; do sleep 1; done"
     ]
   }
 }
@@ -216,6 +217,7 @@ resource null_resource servers_drain {
     server_name     = local.servers_metadata[split(var.separator, each.key)[0]].name
     connection_json = base64encode(jsonencode(local.root_server_connection))
     drain_timeout   = var.drain_timeout
+    kubectl_command = var.kubectl_command
   }
   lifecycle { ignore_changes = [triggers] }
 
@@ -251,7 +253,7 @@ resource null_resource servers_drain {
 
   provisioner remote-exec {
     when   = destroy
-    inline = ["kubectl drain ${self.triggers.server_name} --delete-local-data --force --ignore-daemonsets --timeout=${self.triggers.drain_timeout}"]
+    inline = ["${self.triggers.kubectl_command} drain ${self.triggers.server_name} --delete-local-data --force --ignore-daemonsets --timeout=${self.triggers.drain_timeout}"]
   }
 }
 
@@ -264,6 +266,7 @@ resource null_resource servers_annotation {
     server_name      = local.servers_metadata[split(var.separator, each.key)[0]].name
     annotation_name  = split(var.separator, each.key)[1]
     on_value_changes = each.value
+    kubectl_command = var.kubectl_command
 
     connection_json = base64encode(jsonencode(local.root_server_connection))
   }
@@ -301,13 +304,13 @@ resource null_resource servers_annotation {
 
   provisioner remote-exec {
     inline = [
-    "kubectl annotate --overwrite node ${self.triggers.server_name} ${self.triggers.annotation_name}=${self.triggers.on_value_changes}"]
+    "${self.triggers.kubectl_command} annotate --overwrite node ${self.triggers.server_name} ${self.triggers.annotation_name}=${self.triggers.on_value_changes}"]
   }
 
   provisioner remote-exec {
     when = destroy
     inline = [
-    "kubectl annotate node ${self.triggers.server_name} ${self.triggers.annotation_name}-"]
+    "${self.triggers.kubectl_command} annotate node ${self.triggers.server_name} ${self.triggers.annotation_name}-"]
   }
 }
 
@@ -320,6 +323,7 @@ resource null_resource servers_label {
     server_name      = local.servers_metadata[split(var.separator, each.key)[0]].name
     label_name       = split(var.separator, each.key)[1]
     on_value_changes = each.value
+    kubectl_command = var.kubectl_command
 
     connection_json = base64encode(jsonencode(local.root_server_connection))
   }
@@ -357,13 +361,13 @@ resource null_resource servers_label {
 
   provisioner remote-exec {
     inline = [
-    "kubectl label --overwrite node ${self.triggers.server_name} ${self.triggers.label_name}=${self.triggers.on_value_changes}"]
+    "${self.triggers.kubectl_command} label --overwrite node ${self.triggers.server_name} ${self.triggers.label_name}=${self.triggers.on_value_changes}"]
   }
 
   provisioner remote-exec {
     when = destroy
     inline = [
-    "kubectl label node ${self.triggers.server_name} ${self.triggers.label_name}-"]
+    "${self.triggers.kubectl_command} label node ${self.triggers.server_name} ${self.triggers.label_name}-"]
   }
 }
 
@@ -377,6 +381,7 @@ resource null_resource servers_taint {
     taint_name       = split(var.separator, each.key)[1]
     connection_json  = base64encode(jsonencode(local.root_server_connection))
     on_value_changes = each.value
+    kubectl_command = var.kubectl_command
 
     connection_json = base64encode(jsonencode(local.root_server_connection))
   }
@@ -414,12 +419,12 @@ resource null_resource servers_taint {
 
   provisioner remote-exec {
     inline = [
-    "kubectl taint node ${self.triggers.server_name} ${self.triggers.taint_name}=${self.triggers.on_value_changes} --overwrite"]
+    "${self.triggers.kubectl_command} taint node ${self.triggers.server_name} ${self.triggers.taint_name}=${self.triggers.on_value_changes} --overwrite"]
   }
 
   provisioner remote-exec {
     when = destroy
     inline = [
-    "kubectl taint node ${self.triggers.server_name} ${self.triggers.taint_name}-"]
+    "${self.triggers.kubectl_command} taint node ${self.triggers.server_name} ${self.triggers.taint_name}-"]
   }
 }
