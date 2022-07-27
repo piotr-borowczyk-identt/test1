@@ -41,7 +41,7 @@ resource "tls_self_signed_cert" "kubernetes_ca_certs" {
 
   key_algorithm         = "ECDSA"
   validity_period_hours = 876600 # 100 years
-  allowed_uses          = ["critical", "digitalSignature", "keyEncipherment", "keyCertSign"]
+  allowed_uses          = ["key_encipherment", "digital_signature", "server_auth"]
   private_key_pem       = tls_private_key.kubernetes_ca[each.key].private_key_pem
   is_ca_certificate     = true
 
