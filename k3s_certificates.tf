@@ -72,7 +72,6 @@ resource "tls_locally_signed_cert" "master_user" {
   count       = var.generate_ca_certificates ? 1 : 0
 
   cert_request_pem   = tls_cert_request.master_user[0].cert_request_pem
-  ca_key_algorithm   = "ECDSA"
   ca_private_key_pem = tls_private_key.kubernetes_ca[0].private_key_pem
   ca_cert_pem        = tls_self_signed_cert.kubernetes_ca_certs[0].cert_pem
 
