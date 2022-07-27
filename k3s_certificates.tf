@@ -39,7 +39,6 @@ resource "tls_private_key" "kubernetes_ca" {
 resource "tls_self_signed_cert" "kubernetes_ca_certs" {
   for_each              = local.certificates_types
 
-  key_algorithm         = "ECDSA"
   validity_period_hours = 876600 # 100 years
   allowed_uses          = ["key_encipherment", "digital_signature", "server_auth"]
   private_key_pem       = tls_private_key.kubernetes_ca[each.key].private_key_pem
@@ -61,7 +60,6 @@ resource "tls_private_key" "master_user" {
 resource "tls_cert_request" "master_user" {
   count       = var.generate_ca_certificates ? 1 : 0
 
-  key_algorithm   = "ECDSA"
   private_key_pem = tls_private_key.master_user[0].private_key_pem
 
   subject {
